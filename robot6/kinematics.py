@@ -36,7 +36,7 @@ def rpy_to_matrix(roll, pitch, yaw):
 
 
 def matrix_to_rpy(R):
-    # Inverse cho Z-Y-X
+    # Inverse Z-Y-X
     sy = -R[2, 0]
     cy = math.sqrt(max(1.0 - sy * sy, 0.0))
     if cy > 1e-8:
@@ -138,7 +138,7 @@ def hat(v):
 
 
 def log_SO3(R):
-    # omega sao cho exp([omega]^)=R
+    # ([omega]^)=R
     cos_theta = (np.trace(R) - 1.0) / 2.0
     cos_theta = max(min(cos_theta, 1.0), -1.0)
     theta = math.acos(cos_theta)
@@ -217,10 +217,7 @@ class DHRobot:
         wR=0.2,            # ưu tiên vị trí
         fallback=True,
     ):
-        """
-        Weighted DLS IK (ưu tiên vị trí) + fallback vị trí-only.
-        Sau khi có nghiệm, chạy "polish" chỉ-vị-trí để đạt < 1 mm.
-        """
+
         def solve_once(q_init, wR_local, iters=max_iters, lam=damping, step=step_scale,
                        stop_pos=tol_pos, stop_rot=tol_rot):
             q = np.array(q_init, dtype=float).copy()
@@ -252,7 +249,7 @@ class DHRobot:
                 q = q + step * dq
                 q = self.clamp_to_limits(q)
 
-            # kiểm tra cuối
+
             T, _ = self.fk(q)
             p = T[:3, 3]
             R = T[:3, :3]
@@ -263,10 +260,7 @@ class DHRobot:
             return self.clamp_to_limits(q), ok
 
         def polish_position(q_init, stop_pos=8e-4):
-            """
-            Tinh chỉnh chỉ vị trí bằng DLS 3x6 (bỏ orientation) với damping nhỏ.
-            Mục tiêu: kéo sai số xuống < 0.8 mm để vượt ngưỡng test 1 mm.
-            """
+
             q = np.array(q_init, dtype=float).copy()
             lam = 1e-3
             step = 0.5
@@ -288,7 +282,7 @@ class DHRobot:
                 q = self.clamp_to_limits(q + step * dq)
             return self.clamp_to_limits(q)
 
-        # Pass 1: ưu tiên vị trí
+   
         q_sol, ok = solve_once(q0, wR)
         wR_used = wR  # mặc định
 
@@ -307,7 +301,7 @@ class DHRobot:
                     wR_used = 0.0
                     break
 
-        # Polish vị trí
+
         q_sol = polish_position(q_sol)
 
         # Đánh giá cuối theo wR_used thực sự
